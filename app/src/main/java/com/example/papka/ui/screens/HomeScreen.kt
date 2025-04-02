@@ -1,5 +1,6 @@
 package com.example.papka.ui.screens
 
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,7 +27,7 @@ fun HomeScreen(
     navController: NavController,
     foldersViewModel: FoldersViewModel = viewModel()
 ) {
-    val folders = foldersViewModel.getFolderContents("") // Содержимое базовой папки
+    var folders by remember { mutableStateOf(foldersViewModel.getFolderContents("")) } // Контент базовой папки
     var newFolderName by remember { mutableStateOf(TextFieldValue("")) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -51,12 +52,11 @@ fun HomeScreen(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
-                val result = foldersViewModel.addFolder(newFolderName.text)
+                val result = foldersViewModel.addFolder(newFolderName.text)// Добавляем в корень
                 if (result) {
-                    // Обновляем список папок
                     newFolderName = TextFieldValue("")
+                    folders = foldersViewModel.getFolderContents("") // Обновляем список содержимого
                 } else {
-                    // Здесь вызываем показ Snackbar через корутину
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar(
                             message = "Папка с таким именем уже существует или имя некорректно.",
@@ -67,7 +67,6 @@ fun HomeScreen(
             }) {
                 Text("Добавить")
             }
-
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -75,8 +74,6 @@ fun HomeScreen(
         // Список содержимого
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(folders) { file ->
-
-                // Используем ту же структуру, что и в FolderScreen
                 ListItem(
                     headlineContent = { Text(file.name) },
                     leadingContent = {
@@ -88,7 +85,7 @@ fun HomeScreen(
                     },
                     modifier = Modifier.clickable {
                         if (foldersViewModel.isFolder(file)) {
-                            navController.navigate("folder_screen/${file.name}")
+                            navController.navigate("folder_screen/${Uri.encode(file.name)}")
                         }
                     }
                 )

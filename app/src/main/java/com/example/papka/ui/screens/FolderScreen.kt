@@ -27,21 +27,14 @@ fun FolderScreen(
     foldersViewModel: FoldersViewModel = viewModel()
 ) {
     val decodedFolderPath = Uri.decode(folderPath)
-    val contents: List<File> = remember {
-        val fullPath = foldersViewModel.getFullPath(decodedFolderPath)
-        if (fullPath.exists() && fullPath.isDirectory) {
-            foldersViewModel.getFolderContents(decodedFolderPath)
-        } else {
-            emptyList()
-        }
+    var contents by remember {
+        mutableStateOf(foldersViewModel.getFolderContents(decodedFolderPath))
     }
-
     var newFolderName by remember { mutableStateOf(TextFieldValue("")) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Верхняя панель с навигацией
         SmallTopAppBar(
             title = { Text(decodedFolderPath) },
             navigationIcon = {
@@ -67,10 +60,10 @@ fun FolderScreen(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
-                val fullPath = foldersViewModel.getFullPath(decodedFolderPath)
                 val result = foldersViewModel.addFolder("$decodedFolderPath/${newFolderName.text}")
                 if (result) {
                     newFolderName = TextFieldValue("")
+                    contents = foldersViewModel.getFolderContents(decodedFolderPath) // Обновляем содержимое
                 } else {
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar(
@@ -100,7 +93,7 @@ fun FolderScreen(
                     },
                     modifier = Modifier.clickable {
                         if (foldersViewModel.isFolder(file)) {
-                            navController.navigate("folder_screen/${Uri.encode(file.name)}")
+                            navController.navigate("folder_screen/${Uri.encode("$decodedFolderPath/${file.name}")}")
                         }
                     }
                 )

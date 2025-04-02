@@ -51,6 +51,7 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
 
     // Проверка и санитизация пути
     private fun sanitizePath(path: String): String {
-        return path.trim().replace(".", "").replace("/", "")
+        return path.trim().replace("..", "").replace("//", "/")
     }
+
 }
