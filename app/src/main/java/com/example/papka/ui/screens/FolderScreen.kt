@@ -16,6 +16,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.papka.viewmodel.FoldersViewModel
 import java.io.File
 import android.net.Uri
+import androidx.compose.ui.text.input.TextFieldValue
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -24,18 +26,19 @@ fun FolderScreen(
     folderPath: String,
     foldersViewModel: FoldersViewModel = viewModel()
 ) {
-    // Используем Uri.decode для декодирования пути
     val decodedFolderPath = Uri.decode(folderPath)
-
-    // Проверка пути и получение содержимого
     val contents: List<File> = remember {
         val fullPath = foldersViewModel.getFullPath(decodedFolderPath)
         if (fullPath.exists() && fullPath.isDirectory) {
             foldersViewModel.getFolderContents(decodedFolderPath)
         } else {
-            emptyList() // Если папка не существует, возвращаем пустой список
+            emptyList()
         }
     }
+
+    var newFolderName by remember { mutableStateOf(TextFieldValue("")) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Верхняя панель с навигацией
@@ -53,6 +56,36 @@ fun FolderScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Поле для добавления новой папки
+        Row(modifier = Modifier.padding(vertical = 8.dp)) {
+            TextField(
+                value = newFolderName,
+                onValueChange = { newFolderName = it },
+                placeholder = { Text("Имя папки") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = {
+                val fullPath = foldersViewModel.getFullPath(decodedFolderPath)
+                val result = foldersViewModel.addFolder("$decodedFolderPath/${newFolderName.text}")
+                if (result) {
+                    newFolderName = TextFieldValue("")
+                } else {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Папка с таким именем уже существует или имя некорректно.",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+            }) {
+                Text("Добавить")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Вывод содержимого папки
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(contents) { file ->
@@ -67,13 +100,15 @@ fun FolderScreen(
                     },
                     modifier = Modifier.clickable {
                         if (foldersViewModel.isFolder(file)) {
-                            // Кодируем путь перед передачей в навигацию
                             navController.navigate("folder_screen/${Uri.encode(file.name)}")
                         }
                     }
                 )
             }
         }
+
+        // Snackbar для уведомлений
+        SnackbarHost(hostState = snackbarHostState)
     }
 }
 
