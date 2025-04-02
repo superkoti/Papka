@@ -1,32 +1,34 @@
 package com.example.papka.ui.navigation
 
+import android.net.Uri
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.navArgument
 import com.example.papka.ui.screens.FolderScreen
 import com.example.papka.ui.screens.HomeScreen
 
-object NavRoutes {
-    const val HOME = "home"
-    const val FOLDER = "folder/{folderName}"
-}
-
 @Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
+fun AppNavigation(navController: NavController = rememberNavController()) {
     NavHost(
-        navController = navController,
-        startDestination = NavRoutes.HOME // Исправлено: вместо mainScreenRoute используем определённый маршрут
+        navController = navController as NavHostController,
+        startDestination = "home_screen"
     ) {
-        composable(NavRoutes.HOME) {
-            HomeScreen(navController)
+        composable("home_screen") {
+            HomeScreen(navController = navController)
         }
 
-        composable(NavRoutes.FOLDER) { backStackEntry ->
-            val folderName =
-                backStackEntry.arguments?.getString("folderName") ?: "Неизвестная папка"
-            FolderScreen(navController, folderName)
+        composable(
+            "folder_screen/{folderPath}",
+            arguments = listOf(navArgument("folderPath") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val folderPath = backStackEntry.arguments?.getString("folderPath")?.let { Uri.decode(it) } ?: ""
+            FolderScreen(navController = navController, folderPath = folderPath)
         }
+
     }
 }

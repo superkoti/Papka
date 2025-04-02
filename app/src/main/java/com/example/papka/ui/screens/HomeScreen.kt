@@ -1,142 +1,99 @@
 package com.example.papka.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.papka.viewmodel.FoldersViewModel
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun HomeScreen(
     navController: NavController,
     foldersViewModel: FoldersViewModel = viewModel()
 ) {
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = { Text(text = "Домашний экран") },
-                navigationIcon = { Spacer(modifier = Modifier.width(16.dp)) }
+    val folders = foldersViewModel.getFolderContents("") // Содержимое базовой папки
+    var newFolderName by remember { mutableStateOf(TextFieldValue("")) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+
+        // Заголовок
+        Text(
+            text = "Главная",
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Поле добавления новой папки
+        Row(modifier = Modifier.padding(vertical = 8.dp)) {
+            TextField(
+                value = newFolderName,
+                onValueChange = { newFolderName = it },
+                placeholder = { Text("Имя папки") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
             )
-        },
-        content = { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp)
-            ) {
-                var isAccordionExpanded by remember { mutableStateOf(false) }
-                var folderName by remember { mutableStateOf(TextFieldValue("")) }
-                val focusRequester = remember { FocusRequester() }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = {
+                val result = foldersViewModel.addFolder(newFolderName.text)
+                if (result) {
+                    // Обновляем список папок
+                    newFolderName = TextFieldValue("")
+                } else {
+                    // Здесь вызываем показ Snackbar через корутину
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Папка с таким именем уже существует или имя некорректно.",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+            }) {
+                Text("Добавить")
+            }
 
-                // Кнопка для открытия аккордиона
-                Button(
-                    onClick = {
-                        isAccordionExpanded = true
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Список содержимого
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(folders) { file ->
+
+                // Используем ту же структуру, что и в FolderScreen
+                ListItem(
+                    headlineContent = { Text(file.name) },
+                    leadingContent = {
+                        if (foldersViewModel.isFolder(file)) {
+                            Icon(Icons.Default.Email, contentDescription = "Папка")
+                        } else {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Файл")
+                        }
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(if (isAccordionExpanded) "Закрыть" else "Добавить папку")
-                }
-
-                // Аккордион с полем ввода
-                if (isAccordionExpanded) {
-                    LaunchedEffect(Unit) {
-                        focusRequester.requestFocus()
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth()
-                        ) {
-                            // Поле ввода
-                            OutlinedTextField(
-                                value = folderName,
-                                onValueChange = { folderName = it },
-                                label = { Text("Введите название папки") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequester)
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                Button(
-                                    onClick = {
-                                        if (folderName.text.isNotBlank()) {
-                                            foldersViewModel.addFolder(folderName.text)
-                                            folderName = TextFieldValue("")
-                                            isAccordionExpanded = false
-                                        }
-                                    }
-                                ) {
-                                    Text("ОК")
-                                }
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                IconButton(
-                                    onClick = {
-                                        folderName = TextFieldValue("")
-                                        isAccordionExpanded = false
-                                    }
-                                ) {
-                                    Icon(Icons.Default.Close, contentDescription = "Отмена")
-                                }
-                            }
+                    modifier = Modifier.clickable {
+                        if (foldersViewModel.isFolder(file)) {
+                            navController.navigate("folder_screen/${file.name}")
                         }
                     }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Список папок
-                LazyColumn {
-                    items(foldersViewModel.folders) { folder ->
-                        Card(
-                            onClick = { navController.navigate("folder/$folder") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Text(
-                                text = folder,
-                                modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                    }
-                }
+                )
             }
         }
-    )
+        SnackbarHost(hostState = snackbarHostState)
+    }
 }
