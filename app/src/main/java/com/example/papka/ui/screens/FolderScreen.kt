@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.papka.ui.components.CommonTopBarWithTwoButtons
 import com.example.papka.viewmodel.FoldersViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,149 +32,111 @@ fun FolderScreen(
     folderPath: String,
     foldersViewModel: FoldersViewModel = viewModel()
 ) {
+    var folderContents by remember { mutableStateOf(foldersViewModel.getFolderContents(folderPath)) }
+    var showAccordion by remember { mutableStateOf(false) } // Поле для добавления папки
+    var newFolderName by remember { mutableStateOf("") }
+    var showAddFileDialog by remember { mutableStateOf(false) } // Диалог для добавления файла
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val sanitizedFolderPath = foldersViewModel.getFullPath(folderPath)
 
-    // Состояние для содержимого папки, чтобы обновлять список динамически
-    var folderContents by remember { mutableStateOf(foldersViewModel.getFolderContents(folderPath)) }
-
-    // Состояния для пользовательского ввода и диалогов
-    var newFolderName by remember { mutableStateOf("") }
-    var showDialog by remember { mutableStateOf(false) }
-
-    // Remember launcher for selecting multiple files or images
-    val multipleImagesPickerLauncher = rememberLauncherForActivityResult(
+    // Лаунчер выбора документа
+    val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
-        uris?.let {
+        if (uris.isNotEmpty()) {
             coroutineScope.launch {
-                copyFilesToFolder(context, it, sanitizedFolderPath)
-                folderContents = foldersViewModel.getFolderContents(folderPath) // Обновляем содержимое папки
-            }
-        }
-    }
-
-    // Remember launcher for selecting a single file
-    val singleFilePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let {
-            coroutineScope.launch {
-                copyFilesToFolder(context, listOf(it), sanitizedFolderPath)
-                folderContents = foldersViewModel.getFolderContents(folderPath) // Обновляем содержимое папки
+                val folder = foldersViewModel.getFullPath(folderPath)
+                copyFilesToFolder(context, uris, folder)
+                folderContents = foldersViewModel.getFolderContents(folderPath) // Обновляем список после копирования
             }
         }
     }
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
-                title = { Text("Путь: $folderPath") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showDialog = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Add")
-                    }
-                }
+            CommonTopBarWithTwoButtons(
+                title = folderPath,
+                showBackButton = true,
+                onBackClick = { navController.popBackStack() },
+                onAddFolderClick = { showAccordion = !showAccordion }, // Показываем/скрываем поле для папки
+                onAddFileClick = { showAddFileDialog = true } // Показываем диалог для добавления файла
             )
-        }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-        ) {
-            // Поле и кнопка для создания подпапки
-            Row(
+        },
+        content = { paddingValues ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp)
             ) {
-                TextField(
-                    value = newFolderName,
-                    onValueChange = { newFolderName = it },
-                    label = { Text("Название папки") },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp)
-                )
-                Button(onClick = {
-                    if (newFolderName.isNotEmpty()) {
-                        val newFolderPath = "${folderPath.trimEnd('/')}/$newFolderName".replace("//", "/")
-                        val isCreated = foldersViewModel.addFolder(newFolderPath)
-                        if (isCreated) {
-                            folderContents = foldersViewModel.getFolderContents(folderPath) // Обновляем содержимое папки
-                            newFolderName = ""
+                // Поле для ввода нового имени папки
+                if (showAccordion) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        TextField(
+                            value = newFolderName,
+                            onValueChange = { newFolderName = it },
+                            placeholder = { Text("Введите имя папки") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = {
+                            if (foldersViewModel.addFolder("$folderPath/$newFolderName")) {
+                                folderContents = foldersViewModel.getFolderContents(folderPath) // Обновляем список
+                                newFolderName = ""
+                                showAccordion = false
+                            }
+                        }) {
+                            Text("Добавить")
                         }
                     }
-                }) {
-                    Text("Создать")
                 }
-            }
 
-            // Список папок и файлов
-            LazyColumn {
-                items(folderContents.sortedWith(compareBy({ !it.isDirectory }, { it.name }))) { file ->
-                    if (file.isDirectory) {
-                        Text(
-                            text = "📁 ${file.name}",
-                            modifier = Modifier
-                                .clickable {
-                                    // Открытие подпапки (передаем путь через navController)
+                // Отображение содержимого папки
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(folderContents) { file ->
+                        ListItem(
+                            headlineContent = { Text(file.name) },
+                            leadingContent = {
+                                if (foldersViewModel.isFolder(file)) {
+                                    Icon(Icons.Default.Add, contentDescription = "Папка")
+                                } else {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Файл")
+                                }
+                            },
+                            modifier = Modifier.clickable {
+                                if (foldersViewModel.isFolder(file)) {
                                     navController.navigate("folder_screen/${Uri.encode("$folderPath/${file.name}")}")
                                 }
-                                .padding(8.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "📄 ${file.name}",
-                            modifier = Modifier
-                                .clickable {
-                                    // Логика нажатия на файл, если нужно
-                                }
-                                .padding(8.dp)
+                            }
                         )
                     }
                 }
-            }
-        }
-    }
 
-    if (showDialog) {
-        AddFileDialog(
-            onDismiss = { showDialog = false },
-            onItemSelected = { isPhoto ->
-                showDialog = false
-                if (isPhoto) {
-                    multipleImagesPickerLauncher.launch(arrayOf("image/*"))
-                } else {
-                    singleFilePickerLauncher.launch(arrayOf("*/*"))
+                // Диалог для добавления файла
+                if (showAddFileDialog) {
+                    AddFileDialog(
+                        onDismiss = { showAddFileDialog = false },
+                        onItemSelected = { isPhoto ->
+                            if (isPhoto) {
+                                filePickerLauncher.launch(arrayOf("image/*"))
+                            } else {
+                                filePickerLauncher.launch(arrayOf("*/*"))
+                            }
+                            showAddFileDialog = false
+                        }
+                    )
                 }
             }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SmallTopAppBar(
-    title: @Composable () -> Unit,
-    navigationIcon: @Composable () -> Unit,
-    actions: @Composable RowScope.() -> Unit
-) {
-    TopAppBar(
-        title = title,
-        navigationIcon = navigationIcon,
-        actions = actions
+        }
     )
 }
 
+// Диалог для добавления файла
 @Composable
 fun AddFileDialog(
     onDismiss: () -> Unit,
@@ -181,43 +144,33 @@ fun AddFileDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = {},
         title = { Text("Добавить файл") },
-        text = {
-            Column {
-                Text(
-                    text = "Выбрать Фото",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onItemSelected(true) }
-                        .padding(8.dp)
-                )
-                Text(
-                    text = "Выбрать Файл",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onItemSelected(false) }
-                        .padding(8.dp)
-                )
+        confirmButton = {
+            TextButton(onClick = { onItemSelected(true) }) {
+                Text("Фото")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { onItemSelected(false) }) {
+                Text("Файл")
             }
         }
     )
 }
 
+// Копирование файлов в папку
 suspend fun copyFilesToFolder(context: Context, uris: List<Uri>, folder: File) {
     withContext(Dispatchers.IO) {
         uris.forEach { uri ->
+            val fileName = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                cursor.moveToFirst()
+                cursor.getString(nameIndex)
+            } ?: "unknown_file"
             val inputStream = context.contentResolver.openInputStream(uri)
-            val displayName: String = context.contentResolver.query(uri, null, null, null, null)
-                ?.use { cursor ->
-                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    cursor.moveToFirst()
-                    cursor.getString(nameIndex)
-                } ?: "file_${System.currentTimeMillis()}"
-
+            val outputFile = File(folder, fileName)
             inputStream?.use { input ->
-                val newFile = File(folder, displayName)
-                newFile.outputStream().use { output ->
+                outputFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
