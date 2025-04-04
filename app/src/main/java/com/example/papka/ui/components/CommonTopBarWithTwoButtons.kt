@@ -19,7 +19,7 @@ fun CommonTopBarWithTwoButtons(
     onBackClick: (() -> Unit)? = null,
     onAddFolderClick: (() -> Unit)? = null,
     onAddFileClick: (() -> Unit)? = null,
-    onDelFolderClick: (() -> Unit)? = null,
+    onSelectClick: (() -> Unit)? = null,
     onCancelClick: (() -> Unit)? = null, // Логика для кнопки "Отменить"
     onDeleteClick: (() -> Unit)? = null, // Логика для кнопки "Удалить"
 ) {
@@ -58,10 +58,10 @@ fun CommonTopBarWithTwoButtons(
                         )
                     }
                 }
-                if (onDelFolderClick != null) {
+                if (onSelectClick != null) {
                     IconButton(onClick = {
                         isDeleteMode = true // Переходим в режим удаления
-                        onDelFolderClick() // Выполнить логику при выборе режима удаления
+                        onSelectClick() // Выполнить логику при выборе режима удаления
                     }) {
                         Icon(
                             imageVector = Icons.Default.Checklist,

@@ -60,7 +60,7 @@ fun FolderScreen(
                 onBackClick = { navController.popBackStack() },
                 onAddFolderClick = { showAccordion = !showAccordion }, // Показываем/скрываем поле для папки
                 onAddFileClick = { showAddFileDialog = true }, // Показываем диалог для добавления файла
-                onDelFolderClick = {},
+                onSelectClick = {},
                 onCancelClick = {},
                 onDeleteClick = {}
 

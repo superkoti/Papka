@@ -1,6 +1,5 @@
 package com.example.papka.viewmodel
 
-import android.annotation.SuppressLint
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import java.io.File
@@ -47,6 +46,34 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
         } else {
             false
         }
+    }
+
+    // Удаление файлов и папок (включая рекурсивное удаление папок)
+    fun deleteFileOrFolder(path: String): Boolean {
+        val target = File(getBaseFolder(), sanitizePath(path))
+
+        if (!target.exists()) {
+            // Логируем или возвращаем false, если путь не существует
+            return false
+        }
+
+        return if (target.isDirectory) {
+            deleteFolderRecursively(target) // Рекурсивное удаление папки
+        } else {
+            target.delete() // Удаление файла
+        }
+    }
+
+    // Рекурсивное удаление папки и её содержимого
+    private fun deleteFolderRecursively(folder: File): Boolean {
+        folder.listFiles()?.forEach { file ->
+            if (file.isDirectory) {
+                deleteFolderRecursively(file) // Рекурсивное удаление вложенной папки
+            } else {
+                file.delete() // Удаление файла
+            }
+        }
+        return folder.delete() // Удаляем саму папку после очистки
     }
 
     // Проверка и санитизация пути

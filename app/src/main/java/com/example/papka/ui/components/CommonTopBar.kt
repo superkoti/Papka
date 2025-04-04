@@ -14,7 +14,7 @@ fun CommonTopBar(
     title: String,
     showAddButton: Boolean = true, // Показывать кнопку "Добавить"
     onAddClick: (() -> Unit)? = null, // Логика для кнопки "Добавить"
-    onDelFolderClick: (() -> Unit)? = null, // Логика активации режима удаления
+    onSelectClick: (() -> Unit)? = null, // Логика активации режима удаления
     onCancelClick: (() -> Unit)? = null, // Логика для кнопки "Отменить"
     onDeleteClick: (() -> Unit)? = null, // Логика для кнопки "Удалить"
 ) {
@@ -59,10 +59,10 @@ fun CommonTopBar(
                         )
                     }
                 }
-                if (onDelFolderClick != null) {
+                if (onSelectClick != null) {
                     IconButton(onClick = {
                         isDeleteMode = true // Переходим в режим удаления
-                        onDelFolderClick() // Выполнить логику при выборе режима удаления
+                        onSelectClick() // Выполнить логику при выборе режима удаления
                     }) {
                         Icon(
                             imageVector = Icons.Default.Checklist,
