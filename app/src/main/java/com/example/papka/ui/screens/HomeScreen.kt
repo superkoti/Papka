@@ -37,8 +37,33 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             CommonTopBar(
-                title = "Главная",
-                onAddClick = { showAccordion = !showAccordion } // Переключаем аккордеон
+                title = "Мои Папки",
+                showAddButton = true,
+                onAddClick = { showAccordion = !showAccordion },
+                onDelFolderClick = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Режим удаления активирован",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                },
+                onCancelClick = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Режим удаления отменен",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                },
+                onDeleteClick = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Удаление выполнено",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
             )
         },
         content = { paddingValues ->

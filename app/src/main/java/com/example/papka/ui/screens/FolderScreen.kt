@@ -39,6 +39,7 @@ fun FolderScreen(
     var showAddFileDialog by remember { mutableStateOf(false) } // Диалог для добавления файла
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Лаунчер выбора документа
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -60,7 +61,32 @@ fun FolderScreen(
                 showBackButton = true,
                 onBackClick = { navController.popBackStack() },
                 onAddFolderClick = { showAccordion = !showAccordion }, // Показываем/скрываем поле для папки
-                onAddFileClick = { showAddFileDialog = true } // Показываем диалог для добавления файла
+                onAddFileClick = { showAddFileDialog = true }, // Показываем диалог для добавления файла
+                onDelFolderClick = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Режим удаления активирован",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                },
+                onCancelClick = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Режим удаления отменен",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                },
+                onDeleteClick = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Удаление выполнено",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+
             )
         },
         content = { paddingValues ->
