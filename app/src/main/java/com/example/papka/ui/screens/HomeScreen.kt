@@ -40,30 +40,9 @@ fun HomeScreen(
                 title = "Мои Папки",
                 showAddButton = true,
                 onAddClick = { showAccordion = !showAccordion },
-                onDelFolderClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = "Режим удаления активирован",
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-                },
-                onCancelClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = "Режим удаления отменен",
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-                },
-                onDeleteClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = "Удаление выполнено",
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-                }
+                onDelFolderClick = {},
+                onCancelClick = {},
+                onDeleteClick = {}
             )
         },
         content = { paddingValues ->
@@ -106,8 +85,6 @@ fun HomeScreen(
                             leadingContent = {
                                 if (foldersViewModel.isFolder(file)) {
                                     Icon(Icons.Default.FolderOpen, contentDescription = "Папка")
-                                } else {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Файл")
                                 }
                             },
                             modifier = Modifier.clickable {
