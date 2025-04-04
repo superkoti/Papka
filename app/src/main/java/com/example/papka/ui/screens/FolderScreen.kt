@@ -11,7 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.FilePresent
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -103,9 +104,9 @@ fun FolderScreen(
                             headlineContent = { Text(file.name) },
                             leadingContent = {
                                 if (foldersViewModel.isFolder(file)) {
-                                    Icon(Icons.Default.Add, contentDescription = "Папка")
+                                    Icon(Icons.Default.FolderOpen, contentDescription = "Папка")
                                 } else {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Файл")
+                                    Icon(Icons.Default.FilePresent, contentDescription = "Файл")
                                 }
                             },
                             modifier = Modifier.clickable {

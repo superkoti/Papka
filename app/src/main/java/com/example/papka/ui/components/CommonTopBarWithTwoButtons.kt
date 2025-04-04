@@ -2,8 +2,8 @@ package com.example.papka.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 
@@ -33,7 +33,7 @@ fun CommonTopBarWithTwoButtons(
             if (onAddFolderClick != null) {
                 IconButton(onClick = onAddFolderClick) {
                     Icon(
-                        imageVector = Icons.Default.Menu,
+                        imageVector = Icons.Default.Folder,
                         contentDescription = "Добавить папку"
                     )
                 }
@@ -42,7 +42,7 @@ fun CommonTopBarWithTwoButtons(
             if (onAddFileClick != null) {
                 IconButton(onClick = onAddFileClick) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
+                        imageVector = Icons.Default.FileUpload,
                         contentDescription = "Добавить файл"
                     )
                 }
