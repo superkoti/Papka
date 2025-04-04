@@ -1,6 +1,7 @@
 package com.example.papka.viewmodel
 
 import android.app.Application
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.AndroidViewModel
 import java.io.File
 
@@ -80,5 +81,35 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
     private fun sanitizePath(path: String): String {
         return path.trim().replace("..", "").replace("//", "/")
     }
+
+    // Список выделенных путей
+    private val _selectedItems = mutableStateListOf<String>()
+    val selectedItems: List<String> get() = _selectedItems
+
+    // Добавление пути в список выделенных
+    fun selectItem(path: String) {
+        if (!_selectedItems.contains(path)) {
+            _selectedItems.add(path)
+        }
+    }
+
+    // Удаление пути из списка выделенных
+    fun deselectItem(path: String) {
+        _selectedItems.remove(path)
+    }
+
+    // Сброс списка выделенных
+    fun clearSelection() {
+        _selectedItems.clear()
+    }
+
+    // Удаление всех выделенных
+    fun deleteSelected() {
+        _selectedItems.forEach { path ->
+            deleteFileOrFolder(path)
+        }
+        clearSelection() // Очищаем список после удаления
+    }
+
 
 }

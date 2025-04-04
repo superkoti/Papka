@@ -32,6 +32,7 @@ fun HomeScreen(
     var newFolderName by remember { mutableStateOf(TextFieldValue("")) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    var isSelectionMode by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -39,9 +40,17 @@ fun HomeScreen(
                 title = "Мои Папки",
                 showAddButton = true,
                 onAddClick = { showAccordion = !showAccordion },
-                onSelectClick = {},
-                onCancelClick = {},
-                onDeleteClick = {}
+                onSelectClick = { isSelectionMode = true },
+                onDeleteClick = {
+                    foldersViewModel.deleteSelected()
+                    isSelectionMode = false // Завершаем режим выделения
+                    folders = foldersViewModel.getFolderContents("")
+                },
+                onCancelClick = {
+                    foldersViewModel.clearSelection()
+                    isSelectionMode = false // Завершаем режим выделения
+                }
+
             )
         },
         content = { paddingValues ->
@@ -88,7 +97,22 @@ fun HomeScreen(
                             },
                             modifier = Modifier.clickable {
                                 if (foldersViewModel.isFolder(file)) {
+                                    foldersViewModel.clearSelection()
                                     navController.navigate("folder_screen/${Uri.encode(file.name)}")
+                                }
+                            },
+                            trailingContent = { // Переносим чекбоксы сюда
+                                if (isSelectionMode) {
+                                    Checkbox(
+                                        checked = foldersViewModel.selectedItems.contains(file.name),
+                                        onCheckedChange = { isChecked ->
+                                            if (isChecked) {
+                                                foldersViewModel.selectItem(file.name)
+                                            } else {
+                                                foldersViewModel.deselectItem(file.name)
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )
