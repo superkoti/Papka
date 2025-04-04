@@ -38,6 +38,7 @@ fun FolderScreen(
     var showAddFileDialog by remember { mutableStateOf(false) } // Диалог для добавления файла
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var isSelectionMode by remember { mutableStateOf(false) }
 
     // Лаунчер выбора документа
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -60,9 +61,16 @@ fun FolderScreen(
                 onBackClick = { navController.popBackStack() },
                 onAddFolderClick = { showAccordion = !showAccordion }, // Показываем/скрываем поле для папки
                 onAddFileClick = { showAddFileDialog = true }, // Показываем диалог для добавления файла
-                onSelectClick = {},
-                onCancelClick = {},
-                onDeleteClick = {}
+                onSelectClick = { isSelectionMode = true },
+                onCancelClick = {
+                    foldersViewModel.clearSelection()
+                    isSelectionMode = false // Завершаем режим выделения
+                },
+                onDeleteClick = {
+                    foldersViewModel.deleteSelected()
+                    isSelectionMode = false // Завершаем режим выделения
+                    folderContents = foldersViewModel.getFolderContents(folderPath)
+                }
 
             )
         },
@@ -115,6 +123,21 @@ fun FolderScreen(
                             modifier = Modifier.clickable {
                                 if (foldersViewModel.isFolder(file)) {
                                     navController.navigate("folder_screen/${Uri.encode("$folderPath/${file.name}")}")
+                                }
+                            },
+                            trailingContent = { // Переносим чекбоксы сюда
+                                if (isSelectionMode) {
+                                    Checkbox(
+//                                        TODO: пишет неправильный путь
+                                        checked = foldersViewModel.selectedItems.contains(file.name),
+                                        onCheckedChange = { isChecked ->
+                                            if (isChecked) {
+                                                foldersViewModel.selectItem(file.name)
+                                            } else {
+                                                foldersViewModel.deselectItem(file.name)
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         )

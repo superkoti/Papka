@@ -52,6 +52,7 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
     // Удаление файлов и папок (включая рекурсивное удаление папок)
     fun deleteFileOrFolder(path: String): Boolean {
         val target = File(getBaseFolder(), sanitizePath(path))
+        println("Попытка удалить файл или папку: $path. Полный путь: ${target.absolutePath}")
 
         if (!target.exists()) {
             // Логируем или возвращаем false, если путь не существует
